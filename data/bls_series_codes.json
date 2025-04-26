@@ -1,0 +1,124 @@
+{
+  "industries": {
+    "Construction": {
+      "emp_all": "CES2000000001",
+      "hrs_all": "CES2000000002",
+      "earn_all": "CES2000000003",
+      "emp_prod": "CES2000000006",
+      "hrs_prod": "CES2000000007",
+      "earn_prod": "CES2000000008",
+      "unrate": "LNU04032231",
+      "open": "JTS230000000000000JOL",
+      "hires": "JTS230000000000000HIL",
+      "sep": "JTS230000000000000TSL"
+    },
+    "Education and Health Services": {
+      "emp_all": "CES6500000001",
+      "hrs_all": "CES6500000002",
+      "earn_all": "CES6500000003",
+      "emp_prod": "CES6500000006",
+      "hrs_prod": "CES6500000007",
+      "earn_prod": "CES6500000008",
+      "unrate": "LNU04032240",
+      "open": "JTU600000000000000JOL",
+      "hires": "JTU600000000000000HIL",
+      "sep": "JTU600000000000000TSL"
+    },
+    "Financial Activities": {
+      "emp_all": "CES5500000001",
+      "hrs_all": "CES5500000002",
+      "earn_all": "CES5500000003",
+      "emp_prod": "CES5500000006",
+      "hrs_prod": "CES5500000007",
+      "earn_prod": "CES5500000008",
+      "unrate": "LNU04032238",
+      "open": "JTU510099000000000JOL",
+      "hires": "JTU510099000000000HIL",
+      "sep": "JTU510099000000000TSL"
+    },
+    "Information": {
+      "emp_all": "CES5000000001",
+      "hrs_all": "CES5000000002",
+      "earn_all": "CES5000000003",
+      "emp_prod": "CES5000000006",
+      "hrs_prod": "CES5000000007",
+      "earn_prod": "CES5000000008",
+      "unrate": "LNU04032237",
+      "open": "JTU510000000000000JOL",
+      "hires": "JTU510000000000000HIL",
+      "sep": "JTU510000000000000TSL"
+    },
+    "Leisure and Hospitality": {
+      "emp_all": "CES7000000001",
+      "hrs_all": "CES7000000002",
+      "earn_all": "CES7000000003",
+      "emp_prod": "CES7000000006",
+      "hrs_prod": "CES7000000007",
+      "earn_prod": "CES7000000008",
+      "unrate": "LNU04032241",
+      "open": "JTU700000000000000JOL",
+      "hires": "JTU700000000000000HIL",
+      "sep": "JTU700000000000000TSL"
+    },
+    "Manufacturing": {
+      "emp_all": "CES3000000001",
+      "hrs_all": "CES3000000002",
+      "earn_all": "CES3000000003",
+      "emp_prod": "CES3000000006",
+      "hrs_prod": "CES3000000007",
+      "earn_prod": "CES3000000008",
+      "unrate": "LNU04032232",
+      "open": "JTU300000000000000JOL",
+      "hires": "JTU300000000000000HIL",
+      "sep": "JTU300000000000000TSL"
+    },
+    "Natural Resources and Mining": {
+      "emp_all": "CES1000000001",
+      "hrs_all": "CES1000000002",
+      "earn_all": "CES1000000003",
+      "emp_prod": "CES1000000006",
+      "hrs_prod": "CES1000000007",
+      "earn_prod": "CES1000000008",
+      "unrate": "LNU04032230",
+      "open": "JTU110099000000000JOL",
+      "hires": "JTU110099000000000HIL",
+      "sep": "JTU110099000000000TSL"
+    },
+    "Other Services": {
+      "emp_all": "CES8000000001",
+      "hrs_all": "CES8000000002",
+      "earn_all": "CES8000000003",
+      "emp_prod": "CES8000000006",
+      "hrs_prod": "CES8000000007",
+      "earn_prod": "CES8000000008",
+      "unrate": "LNU04032242",
+      "open": "JTU810000000000000JOL",
+      "hires": "JTU810000000000000HIL",
+      "sep": "JTU810000000000000TSL"
+    },
+    "Professional and Business Services": {
+      "emp_all": "CES6000000001",
+      "hrs_all": "CES6000000002",
+      "earn_all": "CES6000000003",
+      "emp_prod": "CES6000000006",
+      "hrs_prod": "CES6000000007",
+      "earn_prod": "CES6000000008",
+      "unrate": "LNU04032239",
+      "open": "JTU540099000000000JOL",
+      "hires": "JTU540099000000000HIL",
+      "sep": "JTU540099000000000TSL"
+    },
+    "Transportation and Utilities": {
+      "emp_all": "CES4000000001",
+      "hrs_all": "CES4000000002",
+      "earn_all": "CES4000000003",
+      "emp_prod": "CES4000000006",
+      "hrs_prod": "CES4000000007",
+      "earn_prod": "CES4000000008",
+      "unrate": "LNU04034168",
+      "open": "JTU400000000000000JOL",
+      "hires": "JTU400000000000000HIL",
+      "sep": "JTU400000000000000TSL"
+    }
+  }
+}
