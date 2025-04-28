@@ -7,7 +7,6 @@ Reworked to handle the merged multi‐industry CSV:
   - scales X and y separately
   - builds sliding windows: seq_length → predict next‐step y
 """
-
 import pandas as pd
 import numpy as np
 import torch
@@ -17,26 +16,22 @@ from sklearn.model_selection import train_test_split
 from src.config import DATA_CONFIG, TRAINING_CONFIG
 
 def load_data(data_file=None):
-    # 1) default path
     if data_file is None:
         data_file = DATA_CONFIG['default_data_file']
     data_path = Path(DATA_CONFIG['data_dir']) / data_file
 
-    # 2) read & sort
     df = pd.read_csv(data_path, parse_dates=['date'])
     df = df.sort_values(['industry','date'])
 
-    # 3) one‐hot the industry
     df = pd.get_dummies(df, columns=['industry'], prefix='ind')
 
-    # 4) split out target y and features X
     y = df['y'].values.reshape(-1,1)                # target
     X = df.drop(['date','y'], axis=1).values        # all other cols
 
-    # 5) feature names (for saving scaler)
+    # feature names (for saving scaler)
     feature_names = df.drop(['date','y'], axis=1).columns.tolist()
 
-    # 6) scale X and y separately
+    # scale X and y separately
     scaler_X = StandardScaler().fit(X)
     scaler_y = StandardScaler().fit(y)
     X_scaled = scaler_X.transform(X)
