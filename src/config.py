@@ -1,22 +1,23 @@
-# src/config.py
 import json
 from pathlib import Path
 
-_cfg = json.loads(
-    (Path(__file__).parent.parent / "data" / "config.json").read_text()
-)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-JSON_KEYS = (
-    "start_year", "end_year",
-    "api_key", "series_codes_file",
-    "data_dir", "models_dir", "output_csv",
-)
-FETCH_CONFIG = {k: _cfg[k] for k in JSON_KEYS}
+_cfg = json.loads((PROJECT_ROOT / "data" / "config.json").read_text())
 
-BLS_PARAMS  = FETCH_CONFIG
-DATA_CONFIG = {"data_dir": FETCH_CONFIG["data_dir"],
-               "models_dir": FETCH_CONFIG["models_dir"],
-               "default_data_file": FETCH_CONFIG.get("output_csv")}
+BLS_PARAMS = {
+    "start_year": _cfg["start_year"],
+    "end_year":   _cfg["end_year"],
+    "api_key":    _cfg["api_key"],
+    "series_codes_file": PROJECT_ROOT / _cfg["series_codes_file"],
+    "output_csv":        PROJECT_ROOT / _cfg["data_dir"] / _cfg["output_csv"],
+}
+
+DATA_CONFIG = {
+    "data_dir":       PROJECT_ROOT / _cfg["data_dir"],
+    "models_dir":     PROJECT_ROOT / _cfg["models_dir"],
+    "default_data_file": PROJECT_ROOT / _cfg["data_dir"] / _cfg["output_csv"],
+}
 
 
 # LSTNet / model‐training parameters 
@@ -34,7 +35,7 @@ TRAINING_CONFIG = {
     'epochs':           100,
     'batch_size':       32,
     'learning_rate':    1e-3,
-    'sequence_length':  12,
+    'sequence_length':  4,      # using past 4 weeks to predict week + 1
     'test_size':        0.2,
     'val_size':         0.2
 }

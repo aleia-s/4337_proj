@@ -96,11 +96,11 @@ def main():
             logger.error("Error fetching %s: %s", industry, e)
             continue
 
-        # 1) series‐ID → JSON key (emp_all, hrs_all, …)
+        # series‐ID → JSON key (emp_all, hrs_all, …)
         df = df.rename(columns={v: k for k, v in metrics.items()})
-        # 2) JSON key → final human name
+        # JSON key → final human name
         df = df.rename(columns=COLUMN_RENAMES)
-        # 3) make y = all_employees_thousands
+        # make y = all_employees_thousands
         df = df.rename(columns={"all_employees_thousands": "y"})
 
         df["industry"] = industry
@@ -120,9 +120,25 @@ def main():
     master = pd.concat(parts, ignore_index=True)
     master.sort_values(["date", "industry"], inplace=True)
 
-    # simply write to your configured path
-    master.to_csv(output_csv, index=False)
-    logger.info("Wrote %d rows × %d cols to %s", *master.shape, output_csv)
+    # resample monthly data to weekly by interpolation
+    master['date'] = pd.to_datetime(master['date'])
+    master = master.infer_objects()
+    master.set_index('date', inplace=True)
+
+    # pull out industry --> roundabout fix for groupby/resample bug 
+    group_keys = master['industry'] 
+    metrics_df = master.drop(columns='industry')
+
+    mw = (
+        metrics_df
+            .groupby(group_keys)
+            .resample('W')
+            .interpolate(method='linear')
+            .reset_index()
+    )
+
+    mw.to_csv(output_csv, index=False)
+    logger.info("Wrote weekly data: %d rows × %d cols to %s", *mw.shape, output_csv)
 
 
 if __name__ == "__main__":

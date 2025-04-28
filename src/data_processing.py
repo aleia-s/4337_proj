@@ -21,23 +21,21 @@ def load_data(data_file=None):
     data_path = Path(DATA_CONFIG['data_dir']) / data_file
 
     df = pd.read_csv(data_path, parse_dates=['date'])
-    df = df.sort_values(['industry','date'])
+    if 'y' in df.columns: 
+        df = df.dropna(subset=['y'])
 
+    float_cols = df.select_dtypes(include=['float64']).columns 
+    df[float_cols] = df[float_cols].round(4)
+
+    df = df.sort_values(['industry', 'date'])
     df = pd.get_dummies(df, columns=['industry'], prefix='ind')
 
     y = df['y'].values.reshape(-1,1)                # target
     X = df.drop(['date','y'], axis=1).values        # all other cols
 
-    # feature names (for saving scaler)
     feature_names = df.drop(['date','y'], axis=1).columns.tolist()
 
-    # scale X and y separately
-    scaler_X = StandardScaler().fit(X)
-    scaler_y = StandardScaler().fit(y)
-    X_scaled = scaler_X.transform(X)
-    y_scaled = scaler_y.transform(y)
-
-    return df['date'].values, X_scaled, y_scaled, scaler_X, scaler_y, feature_names
+    return df['date'].values, X, y, feature_names
 
 def create_sequences(X, y, seq_length=None):
     # default seq_length
@@ -65,30 +63,11 @@ def create_sequences(X, y, seq_length=None):
 def split_data(X, y):
     # first test split
     X_trainval, X_test, y_trainval, y_test = train_test_split(
-        X, y,
-        test_size=TRAINING_CONFIG['test_size'],
-        shuffle=False
+        X, y, test_size=TRAINING_CONFIG['test_size'], shuffle=False
     )
     # then train/val split
     X_train, X_val, y_train, y_val = train_test_split(
-        X_trainval, y_trainval,
-        test_size=TRAINING_CONFIG['val_size'],
-        shuffle=False
+        X_trainval, y_trainval, test_size=TRAINING_CONFIG['val_size'], shuffle=False
     )
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-def save_scalers(scaler_X, scaler_y, feature_names):
-    import joblib
-    models_dir = Path(DATA_CONFIG['models_dir'])
-    models_dir.mkdir(parents=True, exist_ok=True)
-    # dump a tuple of both scalers + feature names
-    joblib.dump(
-        (scaler_X, scaler_y, feature_names),
-        models_dir / 'scalers_and_features.joblib'
-    )
-    print(f"Scalers + feature list saved to {models_dir / 'scalers_and_features.joblib'}")
-
-def load_scalers():
-    import joblib
-    path = Path(DATA_CONFIG['models_dir']) / 'scalers_and_features.joblib'
-    return joblib.load(path)  # (scaler_X, scaler_y, feature_names)

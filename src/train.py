@@ -78,22 +78,41 @@ def main():
     print("Device:", device)
 
     # 1) load & preprocess
-    print("\n1) Loading & scaling…")
-    dates, X_scaled, y_scaled, scaler_X, scaler_y, feat_names = load_data()
+    print("\n1) Loading data...")
+    dates, X_raw, y_raw, feat_names = load_data()
     print("Features:", feat_names)
 
-    # persist scalers
-    save_scalers(scaler_X, scaler_y, feat_names)
+    # 2) split raw data into train/validation/test partitions
+    print("\n2) Splitting raw data...")
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(X_raw, y_raw)
 
-    # 2) sequences
-    print("\n2) Building sequences…")
-    X, y = create_sequences(X_scaled, y_scaled)
+    # 3) fit scalers on train only
+    print("\n3) Scaling data and persisting scalers")
+    from sklearn.preprocessing import StandardScaler
+    scaler_X = StandardScaler().fit(X_train)
+    scaler_y = StandardScaler().fit(y_train)
 
-    # 3) split
-    print("\n3) Splitting…")
-    X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
+    # transform each train/test/val split
+    X_train = scaler_X.transform(X_train)
+    X_val = scaler_X.transform(X_val)
+    X_test = scaler_X.transform(X_test)
 
-    # 4) model init
+    y_train = scaler_y.transform(y_train)
+    y_val = scaler_y.transform(y_val)
+    y_test = scaler_y.transform(y_test)
+
+    # persist scalers to disk
+    import joblib
+    models_dir = Path(DATA_CONFIG['models_dir'])
+    models_dir.mkdir(exist_ok=True, parents=True)
+    joblib.dump((scaler_X, scaler_y, feat_names), 
+                 models_dir / 'scalers_and_features.joblib')
+
+    # 4) build 4-week sliding window sequences
+    X_train_seq, y_train_seq = create_sequences(X_train, y_train, seq_length=4)
+    X_val_seq, y_val_seq = create_sequences(X_val, y_val, seq_length=4)
+    X_test_seq, y_test_seq = create_sequences(X_test, y_test, seq_length=4)
+
     print("\n4) Init model…")
     model = LSTNet(num_features=len(feat_names), device=device)
 
