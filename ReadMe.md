@@ -84,49 +84,6 @@ This script:
 - Generates visualizations in `visualizations/`
 - Creates industry comparison charts
 
-## Project Structure
-
-```
-├── config.py                     # Configuration settings
-├── train.py                      # Script for training models
-├── evaluate.py                   # Script for evaluating models and generating visualizations
-├── run.py                        # Script to run the entire workflow
-├── data/
-│   └── data.csv                  # Input data
-├── results/
-│   ├── models/                   # Saved models
-│   │   ├── [industry_name]/      # Industry-specific models
-│   │   │   ├── lstnet_model.pth  # Saved model
-│   │   │   └── scaler.joblib     # Saved scaler
-│   ├── visualizations/           # Output visualizations
-│   │   ├── [industry_name]/      # Industry-specific visualizations
-│   │   │   └── employment_predictions.png  # Employment predictions
-│   │   ├── industry_comparisons/ # Industry comparison visualizations
-│   │   │   ├── industry_comparison_MSE_top10.png
-│   │   │   └── industry_comparison_MAPE_top10.png
-│   │   └── predictions/          # Detailed prediction visualizations
-├── src/
-│   ├── data/                     # Data processing modules
-│   │   └── data_processor.py
-│   └── visualization/            # Visualization modules
-│       └── plotter.py
-```
-
 ## Model Architecture
 
 The LSTNet model combines CNN, RNN, and autoregression components to capture both short-term local dependency patterns and long-term patterns for time series forecasting of employment data.
-
-## Generated Visualizations
-
-1. Employment prediction plots showing actual vs. predicted values
-2. Industry comparison plots showing best and worst performing industries
-3. Detailed prediction plots for top performing industries
-
-## Performance Metrics
-
-The system calculates the following metrics for employment predictions:
-- MSE (Mean Squared Error)
-- MAE (Mean Absolute Error)
-- MAPE (Mean Absolute Percentage Error)
-
-For industry comparison, a summary table is provided showing these metrics for employment across all industries.

@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 import config
 from src.data.data_processor import load_data, create_sequences, get_industries, load_scaler
-from src.visualization.plotter import plot_predictions, plot_loss_curves, print_metrics, plot_industry_comparison
+from src.visualization.plotter import plot_predictions, plot_loss_curves, print_metrics, plot_industry_comparison, plot_model_comparison_metrics, plot_all_industries_mape
 from OLD_FILES.LSTNet import LSTNet
 import argparse
 import time
@@ -150,6 +150,9 @@ def evaluate_all_industries():
     # Dictionary to store metrics for each industry
     industry_metrics = {}
     
+    # Dictionary to store feature metrics for model comparison chart
+    model_comparison_data = {}
+    
     # Evaluate each industry
     for i, industry in enumerate(industries):
         print(f"\nIndustry {i+1}/{len(industries)}: {industry}")
@@ -166,9 +169,10 @@ def evaluate_all_industries():
             # Evaluate model
             _, _, _, feature_names, metrics = evaluate_industry_model(industry)
             
-            # Store y metrics for comparison
+            # Store metrics for comparison
             if 'y' in metrics:
                 industry_metrics[industry] = metrics['y']
+                model_comparison_data[industry] = metrics
                 
         except Exception as e:
             print(f"Error evaluating model for industry {industry}: {str(e)}")
@@ -182,29 +186,39 @@ def evaluate_all_industries():
     print("\n" + "="*70)
     print("Summary of Industry Model Performance (employment):")
     print("="*70)
-    print(f"{'Industry':<30} {'MSE':<10} {'MAE':<10} {'MAPE':<10}")
+    print(f"{'Industry':<30} {'MSE':<10} {'MAE':<10} {'MAPE':<12}")
     print("-"*70)
     
     for industry, metrics in industry_metrics.items():
-        print(f"{industry:<30} {metrics['MSE']:<10.4f} {metrics['MAE']:<10.4f} {metrics['MAPE']:<10.2f}%")
+        print(f"{industry:<30} {metrics['MSE']:<10.4f} {metrics['MAE']:<10.4f} {metrics['MAPE']:<12.2f}%")
     
-    # Create plots for each metric
-    for metric in ['MSE', 'MAE', 'MAPE']:
-        # Create top 10 plots (best performing)
-        plot_industry_comparison(
-            industry_metrics, 
-            metric=metric, 
-            top_n=10,
-            savepath=comparisons_dir / f'industry_comparison_{metric}_top10.png'
+    # Create a single chart showing MAPE values for all industries
+    if len(model_comparison_data) > 0:
+        # Chart 1: All industries
+        plot_all_industries_mape(
+            model_comparison_data,
+            feature_name='y',
+            savepath=comparisons_dir / 'all_industries_mape_comparison.png',
+            title="Industry Model Performance Comparison (MAPE %)"
         )
         
-        # Create bottom 10 plots (worst performing)
-        plot_industry_comparison(
-            industry_metrics, 
-            metric=metric, 
-            top_n=-10,  # Negative means take from the end (worst)
-            savepath=comparisons_dir / f'industry_comparison_{metric}_bottom10.png'
-        )
+        # Chart 2: Only industries with MAPE < 60%
+        # Create a filtered copy of the metrics dictionary
+        filtered_metrics = {}
+        for industry, metrics in model_comparison_data.items():
+            if metrics['y']['MAPE'] < 60.0:  # Only include industries with MAPE < 60%
+                filtered_metrics[industry] = metrics
+        
+        if len(filtered_metrics) > 0:
+            plot_all_industries_mape(
+                filtered_metrics,
+                feature_name='y',
+                savepath=comparisons_dir / 'filtered_industries_mape_comparison.png',
+                title="Industry Model Performance Comparison - MAPE < 60%"
+            )
+            print(f"\nCreated filtered chart with {len(filtered_metrics)} industries (MAPE < 60%)")
+        else:
+            print("\nNo industries with MAPE < 60% found for filtered chart")
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate trained models and generate visualizations')
