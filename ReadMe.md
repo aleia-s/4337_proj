@@ -81,7 +81,7 @@ This script:
 - Loads the trained models
 - Makes predictions on the data
 - Calculates performance metrics
-- Generates visualizations in `results/visualizations/`
+- Generates visualizations in `visualizations/`
 - Creates industry comparison charts
 
 ## Project Structure

@@ -23,7 +23,7 @@ except (FileNotFoundError, json.JSONDecodeError):
         "series_codes_file": "data/bls_series_codes.json",
         "data_dir": "data",
         "models_dir": "results/models",
-        "visualizations_dir": "results/visualizations",
+        "visualizations_dir": "visualizations",
         "output_csv": "data.csv"
     }
 
@@ -38,7 +38,7 @@ BLS_PARAMS = {
 DATA_CONFIG = {
     "data_dir":       PROJECT_ROOT / _cfg["data_dir"],
     "models_dir":     PROJECT_ROOT / _cfg["models_dir"],
-    "visualizations_dir": PROJECT_ROOT / _cfg.get("visualizations_dir", "results/visualizations"),
+    "visualizations_dir": PROJECT_ROOT / _cfg.get("visualizations_dir", "visualizations"),
     "default_data_file": DATA_FILES[ACTIVE_DATASET],
 }
 
