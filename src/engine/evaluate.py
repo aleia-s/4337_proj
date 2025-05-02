@@ -176,8 +176,8 @@ def plot_average_unemployment(industry_predictions, savepath=None):
         avg_true /= count
         avg_pred /= count
         
-        # Plot the average comparison
-        fig, ax = plt.subplots(figsize=(12, 6))
+        # Plot the average comparison - wider and shorter for double column layout
+        fig, ax = plt.subplots(figsize=(18, 4))
         
         # Plot the true average
         ax.plot(ref_dates[-len(avg_true):], avg_true, 
@@ -193,21 +193,21 @@ def plot_average_unemployment(industry_predictions, savepath=None):
                 linestyle='--')
         
         # Add title but remove axis labels
-        ax.set_title('Average Unemployment Across All Industries', fontweight='bold')
+        ax.set_title('Average Unemployment Across All Industries', fontweight='bold', fontsize=14)
         
         # Remove axis labels
         ax.set_xlabel('')
         ax.set_ylabel('')
         
-        # Add legend at the top right
-        ax.legend(loc='upper right')
+        # Add legend at the bottom right with slightly larger font
+        ax.legend(loc='lower right', fontsize=12)
         
         # Add grid
         ax.grid(True, alpha=0.3)
         
-        # Apply academic styling
-        plt.xticks(rotation=45)
-        plt.tight_layout()
+        # Apply academic styling with cleaner x-axis
+        plt.xticks(rotation=45, fontsize=10)
+        plt.tight_layout(pad=0.5)  # Tighter layout with less padding
         
         # Calculate metrics for average prediction
         mse = np.mean((avg_true - avg_pred)**2)
@@ -218,11 +218,11 @@ def plot_average_unemployment(industry_predictions, savepath=None):
         mask = denominator != 0
         smape = 100.0 * np.mean(2.0 * np.abs(avg_true[mask] - avg_pred[mask]) / denominator[mask])
         
-        # Add metrics annotation - moved lower to avoid overlap with the line legend
+        # Add metrics annotation - moved to better position for wide figure
         metrics_text = f'MSE: {mse:.4f}\nMAE: {mae:.4f}\nSMAPE: {smape:.2f}%'
-        ax.annotate(metrics_text, xy=(0.02, 0.70), xycoords='axes fraction',  # Moved from 0.95 to 0.70
+        ax.annotate(metrics_text, xy=(0.02, 0.80), xycoords='axes fraction',
                     bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", alpha=0.8),
-                    va='top', ha='left')
+                    va='top', ha='left', fontsize=11)
         
         # Save or show the plot
         if savepath:
