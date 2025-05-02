@@ -50,9 +50,9 @@ def plot_loss_curves(train_losses, val_losses, savepath=None, title=None):
              linewidth=config.VISUALIZATION_CONFIG['line_width'],
              linestyle=config.VISUALIZATION_CONFIG['line_styles']['pred'])
     
-    # For academic papers, we'll keep axis labels minimal or remove them
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
+    # Remove axis labels for academic paper
+    plt.xlabel("")
+    plt.ylabel("")
     
     if title and config.VISUALIZATION_CONFIG['show_titles']:
         plt.title(title)
@@ -105,9 +105,8 @@ def plot_predictions(dates, y_true, y_pred, feature_names, n_plots=3, savepath=N
         
         ax.legend(loc=config.VISUALIZATION_CONFIG['legend_loc'])
         
-        # For academic papers, minimal or no labels
-        # Just showing the feature name as the y-axis label
-        ax.set_ylabel(feature_names[i])
+        # Remove y-axis label - we don't need it for academic paper
+        ax.set_ylabel('')
         
         # Remove x-axis label for all but the bottom subplot
         if ax != axes[-1]:
@@ -121,9 +120,9 @@ def plot_predictions(dates, y_true, y_pred, feature_names, n_plots=3, savepath=N
         fig.suptitle(title, fontsize=config.VISUALIZATION_CONFIG['title_size'])
         fig.subplots_adjust(top=0.95)
     
-    # Only add the time label to the bottom plot
+    # Remove the time label from the bottom plot
     if len(axes) > 0:
-        axes[-1].set_xlabel("Time")
+        axes[-1].set_xlabel('')
     
     plt.tight_layout()
     

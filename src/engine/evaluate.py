@@ -8,6 +8,7 @@ from src.visualization.plotter import plot_predictions, plot_loss_curves, print_
 from OLD_FILES.LSTNet import LSTNet
 import argparse
 import time
+import matplotlib.pyplot as plt
 
 def load_model(industry=None):
     """
@@ -143,6 +144,106 @@ def calculate_metrics(y_true, y_pred, feature_names):
     
     return metrics
 
+def plot_average_unemployment(industry_predictions, savepath=None):
+    """
+    Plot the average predicted unemployment versus real average unemployment across all industries.
+    
+    Args:
+        industry_predictions (dict): Dictionary mapping industry names to (dates, y_true, y_pred) tuples
+        savepath (str, optional): Path to save the plot
+    """
+    # Find common date range across all industries
+    # We'll use the first industry's dates as reference
+    ref_industry = list(industry_predictions.keys())[0]
+    ref_dates = industry_predictions[ref_industry]['dates']
+    
+    # Initialize arrays for accumulated true and predicted values
+    avg_true = np.zeros(len(industry_predictions[ref_industry]['y_true']))
+    avg_pred = np.zeros(len(industry_predictions[ref_industry]['y_pred']))
+    
+    # Count how many industries we're averaging
+    count = 0
+    
+    # Sum up all the values
+    for industry, data in industry_predictions.items():
+        if data['y_true'].shape[0] == avg_true.shape[0]:  # Make sure lengths match
+            avg_true += data['y_true']
+            avg_pred += data['y_pred']
+            count += 1
+    
+    # Calculate averages
+    if count > 0:
+        avg_true /= count
+        avg_pred /= count
+        
+        # Plot the average comparison
+        fig, ax = plt.subplots(figsize=(12, 6))
+        
+        # Plot the true average
+        ax.plot(ref_dates[-len(avg_true):], avg_true, 
+                label='Actual Average Unemployment', 
+                color='black', 
+                linewidth=2)
+        
+        # Plot the predicted average
+        ax.plot(ref_dates[-len(avg_pred):], avg_pred, 
+                label='Predicted Average Unemployment', 
+                color='red', 
+                linewidth=2, 
+                linestyle='--')
+        
+        # Add title but remove axis labels
+        ax.set_title('Average Unemployment Across All Industries', fontweight='bold')
+        
+        # Remove axis labels
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        
+        # Add legend at the top right
+        ax.legend(loc='upper right')
+        
+        # Add grid
+        ax.grid(True, alpha=0.3)
+        
+        # Apply academic styling
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        
+        # Calculate metrics for average prediction
+        mse = np.mean((avg_true - avg_pred)**2)
+        mae = np.mean(np.abs(avg_true - avg_pred))
+        
+        # Calculate SMAPE
+        denominator = np.abs(avg_true) + np.abs(avg_pred)
+        mask = denominator != 0
+        smape = 100.0 * np.mean(2.0 * np.abs(avg_true[mask] - avg_pred[mask]) / denominator[mask])
+        
+        # Add metrics annotation - moved lower to avoid overlap with the line legend
+        metrics_text = f'MSE: {mse:.4f}\nMAE: {mae:.4f}\nSMAPE: {smape:.2f}%'
+        ax.annotate(metrics_text, xy=(0.02, 0.70), xycoords='axes fraction',  # Moved from 0.95 to 0.70
+                    bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", alpha=0.8),
+                    va='top', ha='left')
+        
+        # Save or show the plot
+        if savepath:
+            # Ensure directory exists
+            Path(savepath).parent.mkdir(exist_ok=True, parents=True)
+            plt.savefig(savepath, dpi=300, bbox_inches="tight")
+        else:
+            plt.show()
+            
+        plt.close()
+        
+        print(f"\nAverage unemployment metrics across {count} industries:")
+        print(f"MSE: {mse:.4f}")
+        print(f"MAE: {mae:.4f}")
+        print(f"SMAPE: {smape:.2f}%")
+        
+        return avg_true, avg_pred
+    else:
+        print("No valid data to compute average unemployment")
+        return None, None
+
 def evaluate_all_industries():
     """
     Evaluate models for all industries and generate comparison visualizations.
@@ -156,6 +257,9 @@ def evaluate_all_industries():
     
     # Dictionary to store feature metrics for model comparison chart
     model_comparison_data = {}
+    
+    # Dictionary to store prediction data for each industry
+    industry_predictions = {}
     
     # Evaluate each industry
     for i, industry in enumerate(industries):
@@ -171,12 +275,21 @@ def evaluate_all_industries():
                 continue
             
             # Evaluate model
-            _, _, _, feature_names, metrics = evaluate_industry_model(industry)
+            dates, y_true, y_pred, feature_names, metrics = evaluate_industry_model(industry)
             
             # Store metrics for comparison
-            if 'y' in metrics:
+            if 'y' in feature_names:
+                y_index = feature_names.index('y')
+                
                 industry_metrics[industry] = metrics['y']
                 model_comparison_data[industry] = metrics
+                
+                # Store prediction data for calculating average unemployment
+                industry_predictions[industry] = {
+                    'dates': dates[-len(y_pred):],  # Use same date range as predictions
+                    'y_true': y_true[:, y_index],
+                    'y_pred': y_pred[:, y_index]
+                }
                 
         except Exception as e:
             print(f"Error evaluating model for industry {industry}: {str(e)}")
@@ -196,6 +309,13 @@ def evaluate_all_industries():
     for industry, metrics in industry_metrics.items():
         print(f"{industry:<30} {metrics['MSE']:<10.4f} {metrics['MAE']:<10.4f} {metrics['SMAPE']:<12.2f}%")
     
+    # Plot average unemployment across all industries
+    if len(industry_predictions) > 0:
+        plot_average_unemployment(
+            industry_predictions,
+            savepath=comparisons_dir / 'average_unemployment_comparison.png'
+        )
+    
     # Create a single chart showing SMAPE values for all industries
     if len(model_comparison_data) > 0:
         # Chart 1: All industries
@@ -207,11 +327,11 @@ def evaluate_all_industries():
             title="Industry Model Performance Comparison (SMAPE %)"
         )
         
-        # Chart 2: Only industries with SMAPE < 30%
+        # Chart 2: Only industries with SMAPE < 40%
         # Create a filtered copy of the metrics dictionary
         filtered_metrics = {}
         for industry, metrics in model_comparison_data.items():
-            if metrics['y']['SMAPE'] < 40.0:  # Only include industries with SMAPE < 30%
+            if metrics['y']['SMAPE'] < 40.0:  # Only include industries with SMAPE < 40%
                 filtered_metrics[industry] = metrics
         
         if len(filtered_metrics) > 0:
@@ -222,9 +342,9 @@ def evaluate_all_industries():
                 savepath=comparisons_dir / 'filtered_industries_smape_comparison.png',
                 title="Industry Model Performance Comparison"
             )
-            print(f"\nCreated filtered chart with {len(filtered_metrics)} industries (SMAPE < 30%)")
+            print(f"\nCreated filtered chart with {len(filtered_metrics)} industries (SMAPE < 40%)")
         else:
-            print("\nNo industries with SMAPE < 30% found for filtered chart")
+            print("\nNo industries with SMAPE < 40% found for filtered chart")
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate trained models and generate visualizations')
