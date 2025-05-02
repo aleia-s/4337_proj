@@ -7,7 +7,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from src.config import BLS_PARAMS
+from config import BLS_PARAMS
 
 BLS_API_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 
