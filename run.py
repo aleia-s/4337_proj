@@ -9,12 +9,10 @@ import config
 import os
 
 def ensure_directories():
-    """Ensure necessary directories exist."""
     for dir_path in [config.DATA_CONFIG['models_dir'], config.DATA_CONFIG['visualizations_dir']]:
         Path(dir_path).mkdir(exist_ok=True, parents=True)
 
 def train_models(industry=None, all_industries=False):
-    """Train model(s) by running train.py."""
     print("\n=== Training Models ===")
     # Add current directory to PYTHONPATH so scripts can find the config module
     env = os.environ.copy()
@@ -31,9 +29,7 @@ def train_models(industry=None, all_industries=False):
     return True
 
 def evaluate_models(industry=None, all_industries=False):
-    """Evaluate model(s) by running evaluate.py."""
     print("\n=== Evaluating Models ===")
-    # Add current directory to PYTHONPATH so scripts can find the config module
     env = os.environ.copy()
     env["PYTHONPATH"] = str(Path.cwd()) + os.pathsep + env.get("PYTHONPATH", "")
     
@@ -53,7 +49,6 @@ def evaluate_models(industry=None, all_industries=False):
     return True
 
 def predict_models(industry=None, all_industries=False, top_n=5):
-    """Make predictions using trained model(s) by running predict.py."""
     print("\n=== Making Predictions ===")
     # Add current directory to PYTHONPATH so scripts can find the config module
     env = os.environ.copy()
