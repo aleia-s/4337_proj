@@ -324,32 +324,33 @@ def plot_model_comparison_metrics(metrics_dict, feature_name='y', models=None, s
     
     plt.close()
 
-def plot_all_industries_mape(industry_metrics, feature_name='y', savepath=None, title="Industry Model Performance Comparison (MAPE %)"):
+def plot_all_industries_mape(industry_metrics, feature_name='y', metric_name='SMAPE', savepath=None, title="Industry Model Performance Comparison (SMAPE %)"):
     """
-    Create a single bar chart showing MAPE percentages for all industries, sorted from best to worst.
+    Create a single bar chart showing SMAPE percentages for all industries, sorted from best to worst.
     
     Args:
         industry_metrics (dict): Dictionary mapping industry names to metric dictionaries
-                               Format: {industry_name: {'feature_name': {'MSE': val, 'MAE': val, 'MAPE': val}}}
+                               Format: {industry_name: {'feature_name': {'MSE': val, 'MAE': val, 'SMAPE': val}}}
         feature_name (str): The feature to plot metrics for (default: 'y')
+        metric_name (str): The metric to use (default: 'SMAPE')
         savepath (str): Path to save the figure
         title (str): Title for the plot
     """
     set_academic_style()
     
-    # Extract MAPE values for each industry
+    # Extract metric values for each industry
     industries = []
-    mape_values = []
+    metric_values = []
     
     for industry, metrics in industry_metrics.items():
-        if feature_name in metrics:
+        if feature_name in metrics and metric_name in metrics[feature_name]:
             industries.append(industry)
-            mape_values.append(metrics[feature_name]['MAPE'])
+            metric_values.append(metrics[feature_name][metric_name])
     
-    # Sort industries by MAPE (ascending - lower is better)
-    sorted_indices = np.argsort(mape_values)
+    # Sort industries by metric value (ascending - lower is better)
+    sorted_indices = np.argsort(metric_values)
     industries = [industries[i] for i in sorted_indices]
-    mape_values = [mape_values[i] for i in sorted_indices]
+    metric_values = [metric_values[i] for i in sorted_indices]
     
     # Create the plot - wider and shorter for double column in paper
     fig, ax = plt.subplots(figsize=(16, 6))  # Wider and shorter for double column
@@ -360,7 +361,7 @@ def plot_all_industries_mape(industry_metrics, feature_name='y', savepath=None, 
     # Make the bars skinnier with spacing between them
     bar_width = 0.7  # Skinnier bars (default is 0.8)
     
-    bars = ax.bar(industries, mape_values, 
+    bars = ax.bar(industries, metric_values, 
                  width=bar_width,
                  color=[bar_colors[i % 2] for i in range(len(industries))],
                  edgecolor='black', 
@@ -368,8 +369,8 @@ def plot_all_industries_mape(industry_metrics, feature_name='y', savepath=None, 
                  alpha=1.0)  # Fully opaque, no translucency
     
     # Add value labels on top of bars
-    for bar, value in zip(bars, mape_values):
-        ax.text(bar.get_x() + bar.get_width()/2, value + max(mape_values)*0.02,  # Position value labels slightly above bars
+    for bar, value in zip(bars, metric_values):
+        ax.text(bar.get_x() + bar.get_width()/2, value + max(metric_values)*0.02,  # Position value labels slightly above bars
                 f"{value:.1f}%", ha='center', va='bottom', 
                 fontsize=9, rotation=90,
                 fontweight='bold')  # Make value labels bold
@@ -377,7 +378,7 @@ def plot_all_industries_mape(industry_metrics, feature_name='y', savepath=None, 
     # Add title and labels
     if config.VISUALIZATION_CONFIG['show_titles']:
         ax.set_title(title, fontweight='bold')  # Make title bold
-    ax.set_ylabel('MAPE (%)', fontweight='bold')  # Make axis label bold
+    ax.set_ylabel(f'{metric_name} (%)', fontweight='bold')  # Make axis label bold
     
     # Add y-axis grid lines
     ax.yaxis.grid(True, linestyle='--', alpha=0.7)
@@ -389,8 +390,8 @@ def plot_all_industries_mape(industry_metrics, feature_name='y', savepath=None, 
     plt.yticks(fontweight='bold')
     
     # Set a reasonable y-axis limit based on the data
-    max_value = max(mape_values)
-    plt.ylim(0, max_value * 1.25)  # Add 15% padding at the top
+    max_value = max(metric_values)
+    plt.ylim(0, max_value * 1.25)  # Add 25% padding at the top
     
     # Add a thin border around the plot
     for spine in ax.spines.values():

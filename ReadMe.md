@@ -37,14 +37,15 @@ The workflow is separated into training and evaluation steps:
 For convenience, you can run the entire workflow using:
 
 ```
-python run.py [--all] [--industry INDUSTRY] [--train-only] [--evaluate-only]
+python run.py [--all] [--industry INDUSTRY] [--train] [--evaluate] [--predict]
 ```
 
 Arguments:
 - `--all`: Process all industries (recommended)
 - `--industry`: Process a specific industry
-- `--train-only`: Only train models, skip evaluation
-- `--evaluate-only`: Only evaluate existing models, skip training
+- `--train`: Train models
+- `--evaluate`: Evaluate existing models
+- `--predict`: Generate predictions
 
 ### Step 1: Training Models
 

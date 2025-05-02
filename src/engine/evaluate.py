@@ -95,7 +95,7 @@ def evaluate_industry_model(industry=None):
         print(f"\nPerformance on employment ('y'):")
         print(f"MSE: {metrics['y']['MSE']:.4f}")
         print(f"MAE: {metrics['y']['MAE']:.4f}")
-        print(f"MAPE: {metrics['y']['MAPE']:.2f}%")
+        print(f"SMAPE: {metrics['y']['SMAPE']:.2f}%")
         
         # Plot actual vs predicted for employment
         industry_display = industry if industry else "All Industries"
@@ -126,12 +126,19 @@ def calculate_metrics(y_true, y_pred, feature_names):
     for i, feature in enumerate(feature_names):
         mse = np.mean((y_true[:, i] - y_pred[:, i])**2)
         mae = np.mean(np.abs(y_true[:, i] - y_pred[:, i]))
-        mape = np.mean(np.abs((y_true[:, i] - y_pred[:, i]) / (y_true[:, i] + 1e-8))) * 100
+        
+        # Calculate SMAPE (Symmetric Mean Absolute Percentage Error)
+        # SMAPE = 100/n * sum(2 * |y_true - y_pred| / (|y_true| + |y_pred|))
+        # This avoids division by zero issues and is symmetric
+        denominator = np.abs(y_true[:, i]) + np.abs(y_pred[:, i])
+        # Avoid division by zero (where both true and predicted are zero)
+        mask = denominator != 0
+        smape = 100.0 * np.mean(2.0 * np.abs(y_true[:, i][mask] - y_pred[:, i][mask]) / denominator[mask])
         
         metrics[feature] = {
             'MSE': mse,
             'MAE': mae,
-            'MAPE': mape
+            'SMAPE': smape
         }
     
     return metrics
@@ -183,39 +190,41 @@ def evaluate_all_industries():
     print("\n" + "="*70)
     print("Summary of Industry Model Performance (employment):")
     print("="*70)
-    print(f"{'Industry':<30} {'MSE':<10} {'MAE':<10} {'MAPE':<12}")
+    print(f"{'Industry':<30} {'MSE':<10} {'MAE':<10} {'SMAPE':<12}")
     print("-"*70)
     
     for industry, metrics in industry_metrics.items():
-        print(f"{industry:<30} {metrics['MSE']:<10.4f} {metrics['MAE']:<10.4f} {metrics['MAPE']:<12.2f}%")
+        print(f"{industry:<30} {metrics['MSE']:<10.4f} {metrics['MAE']:<10.4f} {metrics['SMAPE']:<12.2f}%")
     
-    # Create a single chart showing MAPE values for all industries
+    # Create a single chart showing SMAPE values for all industries
     if len(model_comparison_data) > 0:
         # Chart 1: All industries
         plot_all_industries_mape(
             model_comparison_data,
             feature_name='y',
-            savepath=comparisons_dir / 'all_industries_mape_comparison.png',
-            title="Industry Model Performance Comparison (MAPE %)"
+            metric_name='SMAPE',
+            savepath=comparisons_dir / 'all_industries_smape_comparison.png',
+            title="Industry Model Performance Comparison (SMAPE %)"
         )
         
-        # Chart 2: Only industries with MAPE < 60%
+        # Chart 2: Only industries with SMAPE < 30%
         # Create a filtered copy of the metrics dictionary
         filtered_metrics = {}
         for industry, metrics in model_comparison_data.items():
-            if metrics['y']['MAPE'] < 60.0:  # Only include industries with MAPE < 60%
+            if metrics['y']['SMAPE'] < 40.0:  # Only include industries with SMAPE < 30%
                 filtered_metrics[industry] = metrics
         
         if len(filtered_metrics) > 0:
             plot_all_industries_mape(
                 filtered_metrics,
                 feature_name='y',
-                savepath=comparisons_dir / 'filtered_industries_mape_comparison.png',
+                metric_name='SMAPE',
+                savepath=comparisons_dir / 'filtered_industries_smape_comparison.png',
                 title="Industry Model Performance Comparison"
             )
-            print(f"\nCreated filtered chart with {len(filtered_metrics)} industries (MAPE < 60%)")
+            print(f"\nCreated filtered chart with {len(filtered_metrics)} industries (SMAPE < 30%)")
         else:
-            print("\nNo industries with MAPE < 60% found for filtered chart")
+            print("\nNo industries with SMAPE < 30% found for filtered chart")
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate trained models and generate visualizations')

@@ -73,9 +73,9 @@ def main():
     parser = argparse.ArgumentParser(description='Run the full workflow: train models and evaluate them')
     parser.add_argument('--industry', type=str, help='Industry to process', default=None)
     parser.add_argument('--all', action='store_true', help='Process all industries')
-    parser.add_argument('--train-only', action='store_true', help='Only train models, no evaluation')
-    parser.add_argument('--evaluate-only', action='store_true', help='Only evaluate existing models, no training')
-    parser.add_argument('--predict-only', action='store_true', help='Only run predictions on existing models')
+    parser.add_argument('--train', action='store_true', help='Train models')
+    parser.add_argument('--evaluate', action='store_true', help='Evaluate existing models')
+    parser.add_argument('--predict', action='store_true', help='Run predictions on existing models')
     parser.add_argument('--top-n', type=int, default=5, help='Number of top industries to predict in comparison mode')
     
     args = parser.parse_args()
@@ -83,28 +83,26 @@ def main():
     # Create necessary directories
     ensure_directories()
     
+    # Check if at least one action is specified
+    if not any([args.train, args.evaluate, args.predict]):
+        parser.error("At least one of --train, --evaluate, or --predict must be specified")
+    
     # Run the requested steps
     success = True
     
-    if not args.evaluate_only and not args.predict_only:
+    if args.train:
         success = train_models(args.industry, args.all)
         if not success:
             print("Training failed. Aborting workflow.")
             return
     
-    if not args.train_only and not args.predict_only and success:
+    if args.evaluate and success:
         success = evaluate_models(args.industry, args.all)
         if not success:
             print("Evaluation failed.")
             return
     
-    if not args.train_only and not args.evaluate_only and success:
-        success = predict_models(args.industry, args.all, args.top_n)
-        if not success:
-            print("Prediction failed.")
-            return
-    
-    if args.predict_only:
+    if args.predict and success:
         success = predict_models(args.industry, args.all, args.top_n)
         if not success:
             print("Prediction failed.")
