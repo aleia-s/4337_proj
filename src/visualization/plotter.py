@@ -355,32 +355,47 @@ def plot_all_industries_mape(industry_metrics, feature_name='y', savepath=None, 
     fig, ax = plt.subplots(figsize=(16, 6))  # Wider and shorter for double column
     
     # Create the bars with alternating colors
-    bar_colors = ['#f0f0f0', '#d9d9d9']  # Light gray alternating with slightly darker gray
+    bar_colors = ['#e6e6e6', '#cccccc']  # Solid light gray alternating with solid medium gray
+    
+    # Make the bars skinnier with spacing between them
+    bar_width = 0.7  # Skinnier bars (default is 0.8)
     
     bars = ax.bar(industries, mape_values, 
+                 width=bar_width,
                  color=[bar_colors[i % 2] for i in range(len(industries))],
-                 edgecolor='black', linewidth=0.5)
+                 edgecolor='black', 
+                 linewidth=1.2,  # Thicker outlines
+                 alpha=1.0)  # Fully opaque, no translucency
     
     # Add value labels on top of bars
     for bar, value in zip(bars, mape_values):
-        ax.text(bar.get_x() + bar.get_width()/2, value + 0.1,
+        ax.text(bar.get_x() + bar.get_width()/2, value + max(mape_values)*0.02,  # Position value labels slightly above bars
                 f"{value:.1f}%", ha='center', va='bottom', 
-                fontsize=9, rotation=90)
+                fontsize=9, rotation=90,
+                fontweight='bold')  # Make value labels bold
     
     # Add title and labels
     if config.VISUALIZATION_CONFIG['show_titles']:
-        ax.set_title(title)
-    ax.set_ylabel('MAPE (%)')
+        ax.set_title(title, fontweight='bold')  # Make title bold
+    ax.set_ylabel('MAPE (%)', fontweight='bold')  # Make axis label bold
     
     # Add y-axis grid lines
     ax.yaxis.grid(True, linestyle='--', alpha=0.7)
     
     # Rotate x-axis labels for better readability
-    plt.xticks(rotation=45, ha='right')
+    plt.xticks(rotation=45, ha='right', fontweight='bold')  # Make x-tick labels bold
+    
+    # Make y-tick labels bold
+    plt.yticks(fontweight='bold')
     
     # Set a reasonable y-axis limit based on the data
     max_value = max(mape_values)
-    plt.ylim(0, max_value * 1.2)  # Add 20% padding at the top
+    plt.ylim(0, max_value * 1.25)  # Add 15% padding at the top
+    
+    # Add a thin border around the plot
+    for spine in ax.spines.values():
+        spine.set_linewidth(1.2)
+        spine.set_color('black')
     
     # Adjust layout
     plt.tight_layout()

@@ -214,7 +214,7 @@ def evaluate_all_industries():
                 filtered_metrics,
                 feature_name='y',
                 savepath=comparisons_dir / 'filtered_industries_mape_comparison.png',
-                title="Industry Model Performance Comparison - MAPE < 60%"
+                title="Industry Model Performance Comparison"
             )
             print(f"\nCreated filtered chart with {len(filtered_metrics)} industries (MAPE < 60%)")
         else:
