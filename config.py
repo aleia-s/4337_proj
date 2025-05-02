@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).parent.absolute()
 
 # Default data file options
 DATA_FILES = {
@@ -22,8 +22,8 @@ except (FileNotFoundError, json.JSONDecodeError):
         "api_key": "",
         "series_codes_file": "data/bls_series_codes.json",
         "data_dir": "data",
-        "models_dir": "models",
-        "visualizations_dir": "results",
+        "models_dir": "results/models",
+        "visualizations_dir": "results/visualizations",
         "output_csv": "data.csv"
     }
 
@@ -38,29 +38,27 @@ BLS_PARAMS = {
 DATA_CONFIG = {
     "data_dir":       PROJECT_ROOT / _cfg["data_dir"],
     "models_dir":     PROJECT_ROOT / _cfg["models_dir"],
-    "visualizations_dir": PROJECT_ROOT / _cfg.get("visualizations_dir", "results"),
+    "visualizations_dir": PROJECT_ROOT / _cfg.get("visualizations_dir", "results/visualizations"),
     "default_data_file": DATA_FILES[ACTIVE_DATASET],
 }
 
 
 # LSTNet / model‐training parameters 
 MODEL_CONFIG = {
-    'num_features':       None,  # This will be set dynamically based on data
-    'conv_out_channels':  32,
-    'gru_hidden_size':    64,
-    'skip_lengths':       [4, 24],
-    'skip_hidden_size':   16,
-    'ar_window':          7,
-    'dropout':            0.2
+    'cnn_kernel_size': 6,     # CNN kernel size
+    'rnn_hidden_size': 100,   # RNN hidden size
+    'skip_size': 24,          # Skip size for skip RNN
+    'skip_hidden_size': 5,    # Skip RNN hidden size
+    'highway_window': 24,     # Size of highway window
 }
 
 TRAINING_CONFIG = {
-    'epochs':           100,
-    'batch_size':       32,
-    'learning_rate':    1e-3,
-    'sequence_length':  4,      # using past 4 weeks to predict week + 1
-    'test_size':        0.2,
-    'val_size':         0.2
+    'batch_size': 128,
+    'epochs': 100,
+    'learning_rate': 0.001,
+    'sequence_length': 28,  # Number of time steps to look back
+    'test_size': 0.2,       # Fraction of data to use for testing
+    'val_size': 0.2,        # Fraction of remaining data to use for validation
 }
 
 VISUALIZATION_CONFIG = {

@@ -1,5 +1,5 @@
 """
-Data processing module for handling data.csv.
+Data processing module for handling data.csv with industry-specific filtering.
 """
 import pandas as pd
 import numpy as np
@@ -9,12 +9,44 @@ import torch
 from pathlib import Path
 import config
 
-def load_data(data_file=None):
+def get_industries(data_file=None):
     """
-    Load and preprocess data from data.csv.
+    Get a list of all unique industries in the dataset.
     
     Args:
         data_file (str, optional): Path to the data file. If None, uses the default 'data/data.csv'.
+        
+    Returns:
+        list: List of unique industry names
+    """
+    # Always use data/data.csv if not specified
+    if data_file is None:
+        data_file = "data/data.csv"
+    
+    # Load the CSV
+    data_path = Path(data_file)
+    if not data_path.is_absolute():
+        data_path = Path(config.PROJECT_ROOT) / data_path
+    
+    # Check if file exists
+    if not data_path.exists():
+        raise FileNotFoundError(f"Could not find data file at {data_path}")
+    
+    # Load data
+    df = pd.read_csv(data_path)
+    
+    # Get unique industries
+    industries = df['industry'].unique().tolist()
+    
+    return industries
+
+def load_data(data_file=None, industry=None):
+    """
+    Load and preprocess data from data.csv, optionally filtering by industry.
+    
+    Args:
+        data_file (str, optional): Path to the data file. If None, uses the default 'data/data.csv'.
+        industry (str, optional): If provided, only load data for this specific industry.
         
     Returns:
         tuple: (dates, scaled_data, scaler, feature_names)
@@ -35,6 +67,13 @@ def load_data(data_file=None):
     # Load data
     df = pd.read_csv(data_path, parse_dates=['date'])
     
+    # Filter by industry if specified
+    if industry is not None:
+        df = df[df['industry'] == industry].copy()
+        
+        if len(df) == 0:
+            raise ValueError(f"No data found for industry: {industry}")
+    
     # Drop any rows with NaN in the target column
     df = df.dropna(subset=['y'])
     
@@ -42,18 +81,33 @@ def load_data(data_file=None):
     float_cols = df.select_dtypes(include=['float64']).columns
     df[float_cols] = df[float_cols].round(4)
     
-    # Sort by industry and date
-    df = df.sort_values(['industry', 'date'])
+    # Sort by date
+    df = df.sort_values('date')
     
-    # One-hot encode the industry column
-    df = pd.get_dummies(df, columns=['industry'], prefix='ind')
-    
-    # For the features, we'll use everything except date and the target y
-    feature_cols = df.drop(['date', 'y'], axis=1).columns
-    
-    # Include y in the scaled data for convenience
-    all_data = df.drop(['date'], axis=1)
-    all_cols = all_data.columns.tolist()
+    # If single industry, we don't need to one-hot encode
+    if industry is not None:
+        # Drop industry column since it's all the same value
+        df = df.drop(columns=['industry'])
+        
+        # For the features, we'll use everything except date and the target y
+        feature_cols = df.drop(['date', 'y'], axis=1).columns
+        
+        # Include y in the scaled data for convenience
+        all_data = df.drop(['date'], axis=1)
+        all_cols = all_data.columns.tolist()
+    else:
+        # Sort by industry and date
+        df = df.sort_values(['industry', 'date'])
+        
+        # One-hot encode the industry column
+        df = pd.get_dummies(df, columns=['industry'], prefix='ind')
+        
+        # For the features, we'll use everything except date and the target y
+        feature_cols = df.drop(['date', 'y'], axis=1).columns
+        
+        # Include y in the scaled data for convenience
+        all_data = df.drop(['date'], axis=1)
+        all_cols = all_data.columns.tolist()
     
     # Scale the data
     scaler = StandardScaler()
@@ -121,33 +175,48 @@ def split_data(X, y):
     
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-def save_scaler(scaler, feature_names):
+def save_scaler(scaler, feature_names, industry=None):
     """
     Save the scaler and feature names.
     
     Args:
         scaler (StandardScaler): The fitted scaler
         feature_names (list): Feature names
+        industry (str, optional): Industry name if using industry-specific models
     """
     # Save the scaler so we can use it later
     import joblib
     models_dir = Path(config.DATA_CONFIG['models_dir'])
+    
+    # If industry-specific, save in industry-specific folder
+    if industry is not None:
+        models_dir = models_dir / industry
+        
     models_dir.mkdir(exist_ok=True, parents=True)
     
     scaler_path = models_dir / 'scaler.joblib'
     joblib.dump((scaler, feature_names), scaler_path)
     print(f"Scaler saved to {scaler_path}")
 
-def load_scaler():
+def load_scaler(industry=None):
     """
     Load the saved scaler and feature names.
     
+    Args:
+        industry (str, optional): Industry name if using industry-specific models
+        
     Returns:
         tuple: (scaler, feature_names)
     """
     # Load the saved scaler
     import joblib
-    scaler_path = Path(config.DATA_CONFIG['models_dir']) / 'scaler.joblib'
+    models_dir = Path(config.DATA_CONFIG['models_dir'])
+    
+    # If industry-specific, load from industry-specific folder
+    if industry is not None:
+        models_dir = models_dir / industry
+    
+    scaler_path = models_dir / 'scaler.joblib'
     
     if not scaler_path.exists():
         raise FileNotFoundError(f"Could not find scaler at {scaler_path}. Have you trained the model yet?")

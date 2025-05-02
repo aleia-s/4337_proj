@@ -1,40 +1,14 @@
 """
-Main script for training the LSTNet model on the all_industries.csv data.
+Main script for training industry-specific LSTNet models.
 """
 import torch
 import torch.nn as nn
 import numpy as np
 from pathlib import Path
 import config
-from src.data.data_processor import load_data, create_sequences, split_data, save_scaler
-from src.visualization.plotter import plot_predictions, plot_loss_curves, print_metrics
+from src.data.data_processor import load_data, create_sequences, split_data, save_scaler, get_industries
 from OLD_FILES.LSTNet import LSTNet
-
-def calculate_metrics(y_true, y_pred, feature_names):
-    """
-    Calculate various metrics for each feature.
-    
-    Args:
-        y_true (np.ndarray): True values
-        y_pred (np.ndarray): Predicted values
-        feature_names (list): List of feature names
-        
-    Returns:
-        dict: Dictionary of metrics for each feature
-    """
-    metrics = {}
-    for i, feature in enumerate(feature_names):
-        mse = np.mean((y_true[:, i] - y_pred[:, i])**2)
-        mae = np.mean(np.abs(y_true[:, i] - y_pred[:, i]))
-        mape = np.mean(np.abs((y_true[:, i] - y_pred[:, i]) / y_true[:, i])) * 100
-        
-        metrics[feature] = {
-            'MSE': mse,
-            'MAE': mae,
-            'MAPE': mape
-        }
-    
-    return metrics
+import time
 
 def train_model(model, X_train, y_train, X_val, y_val):
     """
@@ -89,15 +63,21 @@ def train_model(model, X_train, y_train, X_val, y_val):
     
     return train_losses, val_losses
 
-def save_model(model, feature_names):
+def save_model(model, feature_names, industry=None):
     """
     Save the trained model.
     
     Args:
         model (LSTNet): The trained model
         feature_names (list): List of feature names
+        industry (str, optional): Industry name for industry-specific models
     """
     models_dir = Path(config.DATA_CONFIG['models_dir'])
+    
+    # If industry-specific, save in industry-specific folder
+    if industry is not None:
+        models_dir = models_dir / industry
+    
     models_dir.mkdir(exist_ok=True, parents=True)
     
     model_path = models_dir / 'lstnet_model.pth'
@@ -107,18 +87,32 @@ def save_model(model, feature_names):
     }, model_path)
     print(f"Model saved to {model_path}")
 
-def main():
+def train_industry_model(industry=None):
+    """
+    Train a model for a specific industry or an overall model.
+    
+    Args:
+        industry (str, optional): Industry to train on. If None, trains on all data.
+        
+    Returns:
+        tuple: (model, feature_names) - The trained model and feature names
+    """
     # Set random seed for reproducibility
     torch.manual_seed(42)
     np.random.seed(42)
     
     # Check for GPU availability
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
+    
+    # Industry info for display
+    industry_display = industry if industry else "All Industries"
+    print(f"\n{'='*50}")
+    print(f"Training model for: {industry_display}")
+    print(f"{'='*50}")
     
     # Step 1: Load and preprocess data
-    print("\nStep 1: Loading and preprocessing data...")
-    dates, scaled_data, scaler, feature_names = load_data()
+    print(f"\nStep 1: Loading and preprocessing data for {industry_display}...")
+    dates, scaled_data, scaler, feature_names = load_data(industry=industry)
     print(f"Dataset shape: {scaled_data.shape}")
     print(f"Number of features: {len(feature_names)}")
     
@@ -135,7 +129,6 @@ def main():
     # Step 4: Initialize model
     print("\nStep 4: Initializing model...")
     # Set the num_features dynamically
-    config.MODEL_CONFIG['num_features'] = scaled_data.shape[1]
     model = LSTNet(
         num_features=scaled_data.shape[1],
         device=device
@@ -145,36 +138,70 @@ def main():
     print("\nStep 5: Training model...")
     train_losses, val_losses = train_model(model, X_train, y_train, X_val, y_val)
     
-    # Step 6: Plot loss curves
-    print("\nStep 6: Plotting loss curves...")
-    plot_loss_curves(train_losses, val_losses)
+    # Step 6: Save model and scaler
+    print("\nStep 6: Saving model and scaler...")
+    save_model(model, feature_names, industry)
+    save_scaler(scaler, feature_names, industry)
     
-    # Step 7: Save model and scaler
-    print("\nStep 7: Saving model and scaler...")
-    save_model(model, feature_names)
-    save_scaler(scaler, feature_names)
+    print(f"\nTraining complete for {industry_display}! Model has been saved.")
+    return model, feature_names
+
+def main():
+    start_time = time.time()
     
-    # Step 8: Evaluate on test set
-    print("\nStep 8: Evaluating on test set...")
-    model.eval()
-    with torch.no_grad():
-        y_pred = model(X_test).cpu().numpy()
-        y_true = y_test.cpu().numpy()
+    # Ensure models directory exists
+    models_dir = Path(config.DATA_CONFIG['models_dir'])
+    models_dir.mkdir(exist_ok=True, parents=True)
     
-    # Calculate metrics
-    metrics = calculate_metrics(y_true, y_pred, feature_names)
-    print_metrics(metrics)
+    # Get list of all industries
+    industries = get_industries()
+    print(f"Found {len(industries)} industries: {industries}")
     
-    # Optional: Plot predictions for specific features
-    # You can display predictions for specific features of interest
-    # For example, let's focus on the 'y' target feature
-    y_index = feature_names.index('y')  # Find the index of 'y' in features
-    print(f"\nPerformance on target feature 'y':")
-    print(f"MSE: {metrics['y']['MSE']:.4f}")
-    print(f"MAE: {metrics['y']['MAE']:.4f}")
-    print(f"MAPE: {metrics['y']['MAPE']:.2f}%")
+    # Ask user if they want to train all models or a specific one
+    print("\nOptions:")
+    print("1. Train a separate model for each industry")
+    print("2. Train a model for a specific industry")
+    print("3. Train one combined model with all data")
     
-    print("\nTraining complete! Model has been saved to models/")
+    try:
+        choice = int(input("Enter your choice (1/2/3): "))
+    except ValueError:
+        choice = 1  # Default to option 1
+        
+    if choice == 1:
+        # Train a model for each industry
+        print(f"\nTraining separate models for {len(industries)} industries...")
+        
+        for i, industry in enumerate(industries):
+            print(f"\nIndustry {i+1}/{len(industries)}: {industry}")
+            
+            try:
+                train_industry_model(industry)
+            except Exception as e:
+                print(f"Error training model for industry {industry}: {str(e)}")
+            
+    elif choice == 2:
+        # Train a model for a specific industry
+        print("\nAvailable industries:")
+        for i, industry in enumerate(industries):
+            print(f"{i+1}. {industry}")
+            
+        try:
+            industry_idx = int(input(f"Enter industry number (1-{len(industries)}): ")) - 1
+            if 0 <= industry_idx < len(industries):
+                train_industry_model(industries[industry_idx])
+            else:
+                print("Invalid selection. Training for all industries.")
+                train_industry_model()
+        except ValueError:
+            print("Invalid input. Training for all industries.")
+            train_industry_model()
+    else:
+        # Train a single model with all data
+        train_industry_model()
+    
+    end_time = time.time()
+    print(f"\nTotal training time: {(end_time - start_time) / 60:.2f} minutes")
 
 if __name__ == "__main__":
     main() 
