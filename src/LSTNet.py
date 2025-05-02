@@ -1,20 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from src.config import MODEL_CONFIG
+from config import MODEL_CONFIG, ACTIVE_DATASET
 
 class LSTNet(nn.Module):
-    def __init__(self, num_features: int, device: torch.device):
+    def __init__(self, num_features: int, device: torch.device, output_size=None):
         super().__init__()
         self.device = device
         cfg = MODEL_CONFIG
 
-        self.num_features       = num_features
-        self.conv_out_channels  = cfg['conv_out_channels']
-        self.gru_hidden_size    = cfg['gru_hidden_size']
-        self.skip_lengths       = cfg['skip_lengths']
-        self.skip_hidden_size   = cfg['skip_hidden_size']
-        self.ar_window          = cfg['ar_window']
+        self.num_features = num_features
+        self.output_size = output_size if output_size is not None else (num_features if ACTIVE_DATASET == "unemployment" else 1)
+        self.conv_out_channels = cfg['conv_out_channels']
+        self.gru_hidden_size = cfg['gru_hidden_size']
+        self.skip_lengths = cfg['skip_lengths']
+        self.skip_hidden_size = cfg['skip_hidden_size']
+        self.ar_window = cfg['ar_window']
 
         # 1) Convolution: (batch, 1, seq_len, num_features) -> ...
         self.conv = nn.Conv2d(
@@ -38,7 +39,7 @@ class LSTNet(nn.Module):
 
         # 4) Final fully‐connected
         total_gru_dim = self.gru_hidden_size + len(self.skip_lengths) * self.skip_hidden_size
-        self.fc = nn.Linear(total_gru_dim, self.num_features)
+        self.fc = nn.Linear(total_gru_dim, self.output_size)
 
         # 5) Autoregressive (linear) on last ar_window timesteps
         self.ar = nn.Linear(self.ar_window, 1)
@@ -74,10 +75,10 @@ class LSTNet(nn.Module):
 
         # --- combine ---
         combined = torch.cat([r] + skip_outs, dim=1)  # (batch, total_gru_dim)
-        output   = self.fc(combined)                  # (batch, num_features)
+        output = self.fc(combined)                    # (batch, output_size)
 
         # --- autoregressive term ---
-        if self.ar_window > 0:
+        if self.ar_window > 0 and ACTIVE_DATASET == "unemployment":
             ar = x[:, -self.ar_window:, :]            # (batch, ar_window, num_features)
             ar = self.ar(ar.permute(0,2,1))           # (batch, num_features, 1)
             ar = ar.squeeze(-1)                       # (batch, num_features)

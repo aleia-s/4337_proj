@@ -1,28 +1,51 @@
 import json
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent
 
-_cfg = json.loads((PROJECT_ROOT / "data" / "config.json").read_text())
+# Default data file options
+DATA_FILES = {
+    "unemployment": "OLD_FILES/multivariate_unemployment_LSTNet.csv",
+    "industries": "data/data.csv"
+}
+
+# Set which dataset to use - change this to switch between datasets
+ACTIVE_DATASET = "industries"  # Options: "unemployment" or "industries"
+
+# Load config from file if exists
+try:
+    _cfg = json.loads((PROJECT_ROOT / "data" / "config.json").read_text())
+except (FileNotFoundError, json.JSONDecodeError):
+    _cfg = {
+        "start_year": 2006,
+        "end_year": 2024,
+        "api_key": "",
+        "series_codes_file": "data/bls_series_codes.json",
+        "data_dir": "data",
+        "models_dir": "models",
+        "visualizations_dir": "results",
+        "output_csv": "data.csv"
+    }
 
 BLS_PARAMS = {
     "start_year": _cfg["start_year"],
     "end_year":   _cfg["end_year"],
-    "api_key":    _cfg["api_key"],
-    "series_codes_file": PROJECT_ROOT / _cfg["series_codes_file"],
+    "api_key":    _cfg.get("api_key", ""),
+    "series_codes_file": PROJECT_ROOT / _cfg.get("series_codes_file", "data/bls_series_codes.json"),
     "output_csv":        PROJECT_ROOT / _cfg["data_dir"] / _cfg["output_csv"],
 }
 
 DATA_CONFIG = {
     "data_dir":       PROJECT_ROOT / _cfg["data_dir"],
     "models_dir":     PROJECT_ROOT / _cfg["models_dir"],
-    "default_data_file": PROJECT_ROOT / _cfg["data_dir"] / _cfg["output_csv"],
+    "visualizations_dir": PROJECT_ROOT / _cfg.get("visualizations_dir", "results"),
+    "default_data_file": DATA_FILES[ACTIVE_DATASET],
 }
 
 
 # LSTNet / model‐training parameters 
 MODEL_CONFIG = {
-    'num_features':       5,
+    'num_features':       None,  # This will be set dynamically based on data
     'conv_out_channels':  32,
     'gru_hidden_size':    64,
     'skip_lengths':       [4, 24],
