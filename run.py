@@ -48,6 +48,26 @@ def evaluate_models(industry=None, all_industries=False):
     
     return True
 
+def evaluate_baselines(industry=None, all_industries=False):
+    print("\n=== Evaluating Baseline Models ===")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path.cwd()) + os.pathsep + env.get("PYTHONPATH", "")
+    
+    cmd = [sys.executable, "src/baseline/evaluate_baselines.py"]
+    
+    if all_industries:
+        cmd.append("--all")
+    elif industry:
+        cmd.extend(["--industry", industry])
+    
+    try:
+        subprocess.run(cmd, check=True, env=env)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during baseline evaluation: {e}")
+        return False
+    
+    return True
+
 def predict_models(industry=None, all_industries=False, top_n=5):
     print("\n=== Making Predictions ===")
     # Add current directory to PYTHONPATH so scripts can find the config module
@@ -76,6 +96,7 @@ def main():
     parser.add_argument('--train', action='store_true', help='Train models')
     parser.add_argument('--evaluate', action='store_true', help='Evaluate existing models')
     parser.add_argument('--predict', action='store_true', help='Run predictions on existing models')
+    parser.add_argument('--baseline', action='store_true', help='Evaluate baseline models')
     parser.add_argument('--top-n', type=int, default=5, help='Number of top industries to predict in comparison mode')
     
     args = parser.parse_args()
@@ -84,8 +105,8 @@ def main():
     ensure_directories()
     
     # Check if at least one action is specified
-    if not any([args.train, args.evaluate, args.predict]):
-        parser.error("At least one of --train, --evaluate, or --predict must be specified")
+    if not any([args.train, args.evaluate, args.predict, args.baseline]):
+        parser.error("At least one of --train, --evaluate, --predict, or --baseline must be specified")
     
     # Run the requested steps
     success = True
@@ -102,6 +123,12 @@ def main():
             print("Evaluation failed.")
             return
     
+    if args.baseline and success:
+        success = evaluate_baselines(args.industry, args.all)
+        if not success:
+            print("Baseline evaluation failed.")
+            return
+    
     if args.predict and success:
         success = predict_models(args.industry, args.all, args.top_n)
         if not success:
@@ -113,6 +140,8 @@ def main():
         print(f"Results can be found in:")
         print(f"  - Models: {config.DATA_CONFIG['models_dir']}")
         print(f"  - Visualizations: {config.DATA_CONFIG['visualizations_dir']}")
+        if args.baseline:
+            print(f"  - Baseline Results: src/baseline/baseline_results")
 
 if __name__ == "__main__":
     main() 

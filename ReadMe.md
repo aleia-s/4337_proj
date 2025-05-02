@@ -10,6 +10,7 @@ The system allows you to:
 3. Train one combined model with all data
 4. Evaluate models and generate visualizations
 5. Compare employment predictions across different industries
+6. Evaluate simple baseline models (persistence and oracle) for comparison
 
 ## Data Structure
 
@@ -37,7 +38,7 @@ The workflow is separated into training and evaluation steps:
 For convenience, you can run the entire workflow using:
 
 ```
-python run.py [--all] [--industry INDUSTRY] [--train] [--evaluate] [--predict]
+python run.py [--all] [--industry INDUSTRY] [--train] [--evaluate] [--predict] [--baseline]
 ```
 
 Arguments:
@@ -46,6 +47,7 @@ Arguments:
 - `--train`: Train models
 - `--evaluate`: Evaluate existing models
 - `--predict`: Generate predictions
+- `--baseline`: Evaluate baseline models
 
 ### Step 1: Training Models
 
@@ -84,6 +86,23 @@ This script:
 - Calculates performance metrics
 - Generates visualizations in `visualizations/`
 - Creates industry comparison charts
+
+### Evaluating Baseline Models
+
+For academic comparisons, evaluate baseline models:
+
+```
+python run.py --baseline [--all] [--industry INDUSTRY]
+```
+
+This evaluates simple baseline models:
+- Persistence forecast: uses the last observation as prediction
+- Oracle mean forecast: uses the mean of test values as prediction
+
+Results are stored in:
+- JSON format: `src/baseline/baseline_results/baseline_metrics.json`
+- CSV format: `src/baseline/baseline_results/baseline_summary.csv`
+- LaTeX table: `src/baseline/baseline_results/baseline_table.tex`
 
 ## Model Architecture
 
