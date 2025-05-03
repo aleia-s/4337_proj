@@ -1,6 +1,6 @@
 # LSTNet Industry-Specific Employment Forecasting
 
-This project implements the LSTNet (Long- and Short-term Time-series Network) model for time series forecasting on industry-specific data, with a focus on predicting employment across different industries.
+This project implements a modified version of LSTNet (Long- and Short-term Time-series Network) model for time series forecasting on industry-specific data, with a focus on predicting employment across different industries.
 
 ## Overview
 
@@ -89,20 +89,9 @@ This script:
 
 ### Evaluating Baseline Models
 
-For academic comparisons, evaluate baseline models:
-
 ```
 python run.py --baseline [--all] [--industry INDUSTRY]
 ```
-
-This evaluates simple baseline models:
-- Persistence forecast: uses the last observation as prediction
-- Oracle mean forecast: uses the mean of test values as prediction
-
-Results are stored in:
-- JSON format: `src/baseline/baseline_results/baseline_metrics.json`
-- CSV format: `src/baseline/baseline_results/baseline_summary.csv`
-- LaTeX table: `src/baseline/baseline_results/baseline_table.tex`
 
 ## Model Architecture
 
